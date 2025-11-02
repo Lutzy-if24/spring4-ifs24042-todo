@@ -1,195 +1,176 @@
 package org.delcom.starter.controllers;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 @RestController
 public class HomeController {
 
-    /**
-     * 1. Method untuk memberikan informasi berdasarkan NIM.
-     *    (Kode ini dari permintaan Anda sebelumnya).
-     */
-    @GetMapping("/informasi-nim")
-    public String informasiNim(@RequestParam String nim) {
-        // Mapping prefix ke program studi
-        HashMap<String, String> prodi = new HashMap<>();
-        prodi.put("11S", "Sarjana Informatika");
-        prodi.put("12S", "Sarjana Sistem Informasi");
-        prodi.put("14S", "Sarjana Teknik Elektro");
-        prodi.put("21S", "Sarjana Manajemen Rekayasa");
-        prodi.put("22S", "Sarjana Teknik Metalurgi");
-        prodi.put("31S", "Sarjana Teknik Bioproses");
-        prodi.put("114", "Diploma 4 Teknologi Rekasaya Perangkat Lunak");
-        prodi.put("113", "Diploma 3 Teknologi Informasi");
-        prodi.put("133", "Diploma 3 Teknologi Komputer");
+    private static final DecimalFormat df = createDecimalFormat();
 
-        // Ambil prefix dan angkatan
-        String prefix = nim.substring(0, 3);
-        String angkatan = "20" + nim.substring(3, 5);
-
-        // Urutan: buang leading zero
-        int urutInt = Integer.parseInt(nim.substring(nim.length() - 3));
-        String urutan = String.valueOf(urutInt);
-
-        // Buat output sebagai String
-        StringBuilder sb = new StringBuilder();
-        sb.append("Informasi NIM ").append(nim).append(":\n");
-        sb.append(">> Program Studi: ").append(prodi.getOrDefault(prefix, "Unknown")).append("\n");
-        sb.append(">> Angkatan: ").append(angkatan).append("\n");
-        sb.append(">> Urutan: ").append(urutan);
-
-        return sb.toString();
+    private static DecimalFormat createDecimalFormat() {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols();
+        symbols.setDecimalSeparator('.');
+        return new DecimalFormat("0.00", symbols);
     }
 
-    /**
-     * 2. Method untuk menghitung perolehan nilai akhir.
-     *    Input strBase64 di-decode, lalu setiap baris format "TIPE|NILAI|BOBOT"
-     *    dihitung untuk mendapatkan nilai akhir.
-     */
+    // 1. Informasi NIM
+    @GetMapping("/informasi-nim")
+    public String informasiNim(@RequestParam String nim) {
+        if (nim == null || nim.length() < 8) {
+            return "NIM tidak valid: minimal 8 karakter.";
+        }
+
+        String prefix = nim.substring(0, 3);
+        String angkatan = "20" + nim.substring(3, 5);
+        String lastThree = nim.substring(nim.length() - 3);
+        int urutan = Integer.parseInt(lastThree);
+
+        Map<String, String> prodiMap = new HashMap<>();
+        prodiMap.put("11S", "Sarjana Informatika");
+        prodiMap.put("12S", "Sarjana Sistem Informasi");
+        prodiMap.put("14S", "Sarjana Teknik Elektro");
+        prodiMap.put("21S", "Sarjana Manajemen Rekayasa");
+        prodiMap.put("22S", "Sarjana Teknik Metalurgi");
+        prodiMap.put("31S", "Sarjana Teknik Bioproses");
+        prodiMap.put("114", "Diploma 4 Teknologi Rekasaya Perangkat Lunak");
+        prodiMap.put("113", "Diploma 3 Teknologi Informasi");
+        prodiMap.put("133", "Diploma 3 Teknologi Komputer");
+
+        String prodi = prodiMap.getOrDefault(prefix, "Unknown");
+
+        return String.format("Informasi NIM %s:\n>> Program Studi: %s\n>> Angkatan: %s\n>> Urutan: %d",
+                nim, prodi, angkatan, urutan);
+    }
+
+    // 2. Perolehan Nilai
     @GetMapping("/perolehan-nilai")
     public String perolehanNilai(@RequestParam String strBase64) {
-        // Decode input Base64 menjadi string biasa
-        byte[] decodedBytes = Base64.getDecoder().decode(strBase64);
-        String data = new String(decodedBytes);
-
+        String data = decodeBase64(strBase64);
         String[] lines = data.split("\n");
+
         double totalNilai = 0.0;
         int totalBobot = 0;
 
         for (String line : lines) {
-            // Proses baris yang mengandung '|'
+            line = line.trim();
+            if (line.isEmpty()) continue;
+            if (line.equals("---")) break;
+
             if (line.contains("|")) {
-                String[] parts = line.split("\\|");
+                String[] parts = line.split("\\|", 3);
                 if (parts.length == 3) {
                     try {
-                        double nilai = Double.parseDouble(parts[1]);
-                        int bobot = Integer.parseInt(parts[2]);
-                        totalNilai += nilai * (bobot / 100.0);
-                        totalBobot += bobot;
-                    } catch (NumberFormatException e) {
-                        // Abaikan baris yang formatnya salah
+                        double nilai = Double.parseDouble(parts[1].trim());
+                        int bobot = Integer.parseInt(parts[2].trim());
+                        if (bobot > 0) {
+                            totalNilai += nilai * (bobot / 100.0);
+                            totalBobot += bobot;
+                        }
+                    } catch (NumberFormatException ignored) {
+                        // Skip invalid
                     }
                 }
-            } else if (line.trim().equals("---")) {
-                // Berhenti jika menemukan separator
-                break;
             }
         }
-        
-        // Menentukan grade berdasarkan nilai akhir
-        String grade;
-        if (totalNilai >= 85) grade = "A";
-        else if (totalNilai >= 75) grade = "B";
-        else if (totalNilai >= 65) grade = "C";
-        else if (totalNilai >= 55) grade = "D";
-        else grade = "E";
 
-        return String.format("Nilai Akhir: %.2f (Total Bobot: %d%%)\nGrade: %s", totalNilai, totalBobot, grade);
+        String grade = calculateGrade(totalNilai);
+
+        return String.format("Nilai Akhir: %s (Total Bobot: %d%%)\nGrade: %s",
+                df.format(totalNilai), totalBobot, grade);
     }
 
-    /**
-     * 3. Method untuk menghitung perbedaan jarak antara path 'L' dan kebalikannya.
-     *    'L' (kiri) lawannya 'R' (kanan), dan 'U' (atas) lawannya 'D' (bawah).
-     *    Jarak dihitung menggunakan Manhattan Distance.
-     */
+    private String calculateGrade(double nilai) {
+        if (nilai >= 85) return "A";
+        if (nilai >= 75) return "B";
+        if (nilai >= 65) return "C";
+        if (nilai >= 55) return "D";
+        return "E";
+    }
+
+    // 3. Perbedaan L dan Kebalikannya
     @GetMapping("/perbedaan-l")
     public String perbedaanL(@RequestParam String strBase64) {
-        // Decode input Base64
-        byte[] decodedBytes = Base64.getDecoder().decode(strBase64);
-        String path = new String(decodedBytes).trim();
+        String path = decodeBase64(strBase64).trim();
+        int[] end1 = calculateEndPoint(path);
+        String opposite = reversePath(path);
+        int[] end2 = calculateEndPoint(opposite);
 
-        // ---- Logika calculateCoordinates(path) di-inline di sini ----
-        int xOriginal = 0, yOriginal = 0;
-        for (char move : path.toCharArray()) {
-            switch (move) {
-                case 'U': yOriginal++; break;
-                case 'D': yOriginal--; break;
-                case 'L': xOriginal--; break;
-                case 'R': xOriginal++; break;
-            }
-        }
-        int[] originalCoord = new int[]{xOriginal, yOriginal};
-        // -----------------------------------------------------------
-
-
-        // Buat path kebalikannya
-        StringBuilder oppositePath = new StringBuilder();
-        for (char move : path.toCharArray()) {
-            switch (move) {
-                case 'U': oppositePath.append('D'); break;
-                case 'D': oppositePath.append('U'); break;
-                case 'L': oppositePath.append('R'); break;
-                case 'R': oppositePath.append('L'); break;
-            }
-        }
-
-        // ---- Logika calculateCoordinates(oppositePath.toString()) di-inline di sini ----
-        int xOpposite = 0, yOpposite = 0;
-        for (char move : oppositePath.toString().toCharArray()) {
-            switch (move) {
-                case 'U': yOpposite++; break;
-                case 'D': yOpposite--; break;
-                case 'L': xOpposite--; break;
-                case 'R': xOpposite++; break;
-            }
-        }
-        int[] oppositeCoord = new int[]{xOpposite, yOpposite};
-        // -------------------------------------------------------------------------------
-
-
-        // Hitung perbedaan jarak (Manhattan Distance)
-        int distance = Math.abs(originalCoord[0] - oppositeCoord[0]) + Math.abs(originalCoord[1] - oppositeCoord[1]);
+        int distance = Math.abs(end1[0] - end2[0]) + Math.abs(end1[1] - end2[1]);
 
         return String.format("Path Original: %s -> (%d, %d)\nPath Kebalikan: %s -> (%d, %d)\nPerbedaan Jarak: %d",
-                path, originalCoord[0], originalCoord[1],
-                oppositePath.toString(), oppositeCoord[0], oppositeCoord[1],
-                distance);
+                path, end1[0], end1[1], opposite, end2[0], end2[1], distance);
     }
 
-    // Metode calculateCoordinates(String) sudah DIHAPUS dari sini.
+    private int[] calculateEndPoint(String path) {
+        int x = 0, y = 0;
+        for (char c : path.toCharArray()) {
+            switch (c) {
+                case 'U': y++; break;
+                case 'D': y--; break;
+                case 'L': x--; break;
+                case 'R': x++; break;
+            }
+        }
+        return new int[]{x, y};
+    }
 
-    /**
-     * 4. Method untuk menemukan kata berawalan "ter" yang paling sering muncul.
-     *    Teks input di-decode, lalu dihitung frekuensi setiap kata "ter-".
-     */
+    private String reversePath(String path) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : path.toCharArray()) {
+            switch (c) {
+                case 'U': sb.append('D'); break;
+                case 'D': sb.append('U'); break;
+                case 'L': sb.append('R'); break;
+                case 'R': sb.append('L'); break;
+            }
+        }
+        return sb.toString();
+    }
+
+    // 4. Paling Ter
     @GetMapping("/paling-ter")
     public String palingTer(@RequestParam String strBase64) {
-        // Decode input Base64
-        byte[] decodedBytes = Base64.getDecoder().decode(strBase64);
-        String text = new String(decodedBytes);
-
-        // Buat map untuk menyimpan frekuensi kata
-        Map<String, Integer> wordCount = new HashMap<>();
-
-        // Pisahkan teks menjadi kata, ubah ke huruf kecil, dan hapus tanda baca
+        String text = decodeBase64(strBase64);
+        Map<String, Integer> freq = new HashMap<>();
         String[] words = text.toLowerCase().split("\\W+");
 
         for (String word : words) {
-            if (word.startsWith("ter")) {
-                wordCount.put(word, wordCount.getOrDefault(word, 0) + 1);
+            if (!word.isEmpty() && word.startsWith("ter")) {
+                freq.put(word, freq.getOrDefault(word, 0) + 1);
             }
         }
 
-        if (wordCount.isEmpty()) {
+        if (freq.isEmpty()) {
             return "Tidak ditemukan kata yang berawalan 'ter'.";
         }
 
-        // Cari kata dengan frekuensi tertinggi
-        String mostFrequentWord = "";
+        String topWord = "";
         int maxCount = 0;
-        for (Map.Entry<String, Integer> entry : wordCount.entrySet()) {
-            if (entry.getValue() > maxCount) {
-                maxCount = entry.getValue();
-                mostFrequentWord = entry.getKey();
+        for (Map.Entry<String, Integer> e : freq.entrySet()) {
+            if (e.getValue() > maxCount) {
+                maxCount = e.getValue();
+                topWord = e.getKey();
             }
         }
 
-        return String.format("Kata 'ter' yang paling sering muncul adalah '%s' (muncul %d kali).", mostFrequentWord, maxCount);
+        return String.format("Kata 'ter' yang paling sering muncul adalah '%s' (muncul %d kali).", topWord, maxCount);
+    }
+
+    // Helper: decode Base64
+    private String decodeBase64(String strBase64) {
+        try {
+            byte[] bytes = Base64.getDecoder().decode(strBase64);
+            return new String(bytes);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Input Base64 tidak valid.");
+        }
     }
 }
