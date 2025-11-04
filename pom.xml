@@ -47,7 +47,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Plugin: 100% COVERAGE + GITHUB ACTIONS PASS -->
+            <!-- JaCoCo Plugin: 100% COVERAGE ENFORCED -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
