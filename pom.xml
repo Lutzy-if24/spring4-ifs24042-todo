@@ -47,7 +47,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Plugin: FULLY CONFIGURED -->
+            <!-- JaCoCo Plugin: 100% FIXED & ENFORCED -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -70,7 +70,7 @@
                         </goals>
                     </execution>
 
-                    <!-- 3. TAMBAHKAN INI: check + rules (WAJIB UNTUK GITHUB) -->
+                    <!-- 3. CHECK + RULES: WAJIB UNTUK GITHUB ACTIONS -->
                     <execution>
                         <id>check</id>
                         <goals>
@@ -81,15 +81,17 @@
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
+                                        <!-- 100% BRANCH COVERAGE -->
                                         <limit>
                                             <counter>BRANCH</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.98</minimum>
+                                            <minimum>1.00</minimum>
                                         </limit>
+                                        <!-- 100% LINE COVERAGE -->
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
-                                            <minimum>0.98</minimum>
+                                            <minimum>1.00</minimum>
                                         </limit>
                                     </limits>
                                 </rule>
