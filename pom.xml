@@ -70,9 +70,9 @@
                         </goals>
                     </execution>
 
-                    <!-- 3. CHECK + RULES: WAJIB UNTUK GITHUB ACTIONS -->
+                    <!-- 3. CHECK + RULES: WAJIB UNTUK default-cli (GitHub Actions) -->
                     <execution>
-                        <id>check</id>
+                        <id>default-cli</id>
                         <goals>
                             <goal>check</goal>
                         </goals>
