@@ -41,21 +41,27 @@
 
     <build>
         <plugins>
+            <!-- Spring Boot Plugin -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
+
+            <!-- JaCoCo Plugin: 100% COVERAGE ENFORCED -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.14</version>
                 <executions>
+                    <!-- 1. Siapkan agent untuk test -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
                             <goal>prepare-agent</goal>
                         </goals>
                     </execution>
+
+                    <!-- 2. Buat report setelah test -->
                     <execution>
                         <id>report</id>
                         <phase>test</phase>
@@ -63,6 +69,8 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+
+                    <!-- 3. CHECK + RULES: WAJIB UNTUK GITHUB ACTIONS -->
                     <execution>
                         <id>check</id>
                         <goals>
@@ -73,11 +81,13 @@
                                 <rule>
                                     <element>BUNDLE</element>
                                     <limits>
+                                        <!-- 100% BRANCH COVERAGE -->
                                         <limit>
                                             <counter>BRANCH</counter>
                                             <value>COVEREDRATIO</value>
                                             <minimum>1.00</minimum>
                                         </limit>
+                                        <!-- 100% LINE COVERAGE -->
                                         <limit>
                                             <counter>LINE</counter>
                                             <value>COVEREDRATIO</value>
