@@ -47,7 +47,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Plugin: 100% FIXED & ENFORCED -->
+            <!-- JaCoCo Plugin: 100% FIXED & GITHUB WILL PASS -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
@@ -70,10 +70,9 @@
                         </goals>
                     </execution>
 
-                    <!-- 3. CHECK + RULES: WAJIB UNTUK GITHUB ACTIONS -->
+                    <!-- 3. CHECK + RULES: ID HARUS "check" (BUKAN jacoco-check) -->
                     <execution>
-                        <id>jacoco-check</id>
-                        <phase>verify</phase>
+                        <id>check</id>
                         <goals>
                             <goal>check</goal>
                         </goals>
