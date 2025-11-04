@@ -72,7 +72,8 @@
 
                     <!-- 3. CHECK + RULES: WAJIB UNTUK GITHUB ACTIONS -->
                     <execution>
-                        <id>check</id>
+                        <id>jacoco-check</id>
+                        <phase>verify</phase>
                         <goals>
                             <goal>check</goal>
                         </goals>
