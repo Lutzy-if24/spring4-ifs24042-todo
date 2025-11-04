@@ -60,19 +60,17 @@ public class HomeControllerTest {
     @Test
     void testPerolehanNilai_FullBranchCoverage() {
         String data =
-                "Valid|90|50\n" +           // valid, bobot > 0
-                "\n" +                      // line.isEmpty()
-                "Zero|80|0\n" +             // bobot == 0 → skip
-                "NoPipe\n" +                // !line.contains("|")
-                "Two|Parts\n" +             // parts.length != 3
-                "Bad|abc|def\n" +           // NumberFormatException
-                "---\n" +                   // line.equals("---")
-                "Last|70|30";               // valid, dihitung
+                "Valid|90|50\n" +
+                "\n" +
+                "Zero|80|0\n" +
+                "NoPipe\n" +
+                "Two|Parts\n" +
+                "Bad|abc|def\n" +
+                "---\n" +
+                "Last|70|30";
 
         String b64 = Base64.getEncoder().encodeToString(data.getBytes());
         String result = controller.perolehanNilai(b64);
-
-        // Hanya 2 baris valid: (90 * 0.5) + (70 * 0.3) = 45 + 21 = 66.00
         assertEquals("Nilai Akhir: 66.00 (Total Bobot: 80%)\nGrade: C", result);
     }
 
@@ -86,7 +84,7 @@ public class HomeControllerTest {
     // 3. perbedaanL
     // ===================================================================
     @Test
-    void testPerbedaanL_Valid() {
+    void testPerolehanL_Valid() {
         String path = "UULL";
         String b64 = Base64.getEncoder().encodeToString(path.getBytes());
         String result = controller.perbedaanL(b64);
@@ -110,14 +108,14 @@ public class HomeControllerTest {
     }
 
     // ===================================================================
-    // 4. palingTer
+    // 4. palingTer – 100% BRANCH COVERAGE (FIXED)
     // ===================================================================
+
     @Test
     void testPalingTer_NoTerWords() {
         String text = "hello world java spring";
         String b64 = Base64.getEncoder().encodeToString(text.getBytes());
-        assertEquals("Tidak ditemukan kata yang berawalan 'ter'.",
-                controller.palingTer(b64));
+        assertEquals("Tidak ditemukan kata yang berawalan 'ter'.", controller.palingTer(b64));
     }
 
     @Test
@@ -143,10 +141,6 @@ public class HomeControllerTest {
         String b64 = Base64.getEncoder().encodeToString(text.getBytes());
 
         String result = controller.palingTer(b64);
-
-        // Loop jalan 2 kali:
-        // 1. count=1 > 0 → true
-        // 2. count=1 > 1 → FALSE → branch tercover!
         assertTrue(
             result.contains("'terbaik'") || result.contains("'terburuk'"),
             "Harus memilih salah satu dari dua kata"
@@ -162,16 +156,20 @@ public class HomeControllerTest {
         });
     }
 
+    // KRITIS: GANTI DARI DOUBLE SPACE → PAKAI TITIK → PASTI HASILKAN ""
     @Test
-    void testPalingTer_EmptyWords_FromDoubleSpace() {
-        String text = "tercepat  terlambat"; // dua spasi → word.isEmpty()
+    void testPalingTer_EmptyWord_ForceShortCircuit_WithPunctuation() {
+        String text = ".terbaik"; // titik → split("\\W+") → ["", "terbaik"]
         String b64 = Base64.getEncoder().encodeToString(text.getBytes());
+
         String result = controller.palingTer(b64);
-        assertTrue(result.contains("muncul 1 kali"));
+        assertTrue(result.contains("'terbaik' (muncul 1 kali)"));
+
+        // word = "" → !word.isEmpty() → false → SHORT-CIRCUIT → tercover!
     }
 
     // ===================================================================
-    // Helper: calculateGrade (via reflection untuk coverage eksplisit)
+    // Helper: calculateGrade (via reflection)
     // ===================================================================
     @Test
     void testCalculateGrade_AllGrades() throws Exception {
