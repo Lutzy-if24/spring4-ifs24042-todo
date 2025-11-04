@@ -41,13 +41,13 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot Plugin -->
+           
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Plugin: 100% COVERAGE ENFORCED -->
+         
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
