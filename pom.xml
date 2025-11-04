@@ -47,13 +47,13 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
 
-            <!-- JaCoCo Plugin: HANYA REPORT, TIDAK CHECK -->
+            <!-- JaCoCo Plugin: FULLY CONFIGURED -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>0.8.14</version>
                 <executions>
-                    <!-- Siapkan agent untuk test -->
+                    <!-- 1. Siapkan agent untuk test -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
@@ -61,18 +61,41 @@
                         </goals>
                     </execution>
 
-                    <!-- Buat report setelah test -->
+                    <!-- 2. Buat report setelah test -->
                     <execution>
-                        <id>generate-report</id>
+                        <id>report</id>
                         <phase>test</phase>
                         <goals>
                             <goal>report</goal>
                         </goals>
                     </execution>
 
-                    <!-- HAPUS SEMUA check -->
-                    <!-- <execution id="check-coverage"> ... </execution> -->
-                    <!-- <execution id="check"> ... </execution> -->
+                    <!-- 3. TAMBAHKAN INI: check + rules (WAJIB UNTUK GITHUB) -->
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.98</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.98</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
