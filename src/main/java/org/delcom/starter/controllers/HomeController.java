@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HomeController {
 
+    // Helper untuk format desimal, digunakan oleh perolehanNilai
     private static final DecimalFormat df = createDecimalFormat();
 
     private static DecimalFormat createDecimalFormat() {
@@ -20,8 +21,20 @@ public class HomeController {
         symbols.setDecimalSeparator('.');
         return new DecimalFormat("0.00", symbols);
     }
+    
+    // Helper untuk decode Base64, digunakan oleh 3 dari 4 method utama
+    private String decodeBase64(String strBase64) {
+        try {
+            byte[] bytes = Base64.getDecoder().decode(strBase64);
+            return new String(bytes);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Input Base64 tidak valid.");
+        }
+    }
 
-    // 1. Informasi NIM
+    /**
+     * 1. Informasi NIM
+     */
     @GetMapping("/informasi-nim")
     public String informasiNim(@RequestParam String nim) {
         if (nim == null || nim.length() < 8) {
@@ -37,12 +50,7 @@ public class HomeController {
         prodiMap.put("11S", "Sarjana Informatika");
         prodiMap.put("12S", "Sarjana Sistem Informasi");
         prodiMap.put("14S", "Sarjana Teknik Elektro");
-        prodiMap.put("21S", "Sarjana Manajemen Rekayasa");
-        prodiMap.put("22S", "Sarjana Teknik Metalurgi");
-        prodiMap.put("31S", "Sarjana Teknik Bioproses");
-        prodiMap.put("114", "Diploma 4 Teknologi Rekasaya Perangkat Lunak");
-        prodiMap.put("113", "Diploma 3 Teknologi Informasi");
-        prodiMap.put("133", "Diploma 3 Teknologi Komputer");
+        // Tambahkan prodi lain jika perlu
 
         String prodi = prodiMap.getOrDefault(prefix, "Unknown");
 
@@ -50,7 +58,9 @@ public class HomeController {
                 nim, prodi, angkatan, urutan);
     }
 
-    // 2. Perolehan Nilai
+    /**
+     * 2. Perolehan Nilai
+     */
     @GetMapping("/perolehan-nilai")
     public String perolehanNilai(@RequestParam String strBase64) {
         String data = decodeBase64(strBase64);
@@ -61,8 +71,7 @@ public class HomeController {
 
         for (String line : lines) {
             line = line.trim();
-            if (line.isEmpty()) continue;
-            if (line.equals("---")) break;
+            if (line.isEmpty() || line.equals("---")) continue;
 
             if (line.contains("|")) {
                 String[] parts = line.split("\\|", 3);
@@ -75,18 +84,18 @@ public class HomeController {
                             totalBobot += bobot;
                         }
                     } catch (NumberFormatException ignored) {
-                        // Skip invalid
+                        // Abaikan baris yang format angkanya salah
                     }
                 }
             }
         }
 
         String grade = calculateGrade(totalNilai);
-
         return String.format("Nilai Akhir: %s (Total Bobot: %d%%)\nGrade: %s",
                 df.format(totalNilai), totalBobot, grade);
     }
 
+    // Helper untuk perolehanNilai
     private String calculateGrade(double nilai) {
         if (nilai >= 85) return "A";
         if (nilai >= 75) return "B";
@@ -95,7 +104,9 @@ public class HomeController {
         return "E";
     }
 
-    // 3. Perbedaan L dan Kebalikannya
+    /**
+     * 3. Perbedaan L dan Kebalikannya
+     */
     @GetMapping("/perbedaan-l")
     public String perbedaanL(@RequestParam String strBase64) {
         String path = decodeBase64(strBase64).trim();
@@ -108,7 +119,8 @@ public class HomeController {
         return String.format("Path Original: %s -> (%d, %d)\nPath Kebalikan: %s -> (%d, %d)\nPerbedaan Jarak: %d",
                 path, end1[0], end1[1], opposite, end2[0], end2[1], distance);
     }
-
+    
+    // Helper untuk perbedaanL
     private int[] calculateEndPoint(String path) {
         int x = 0, y = 0;
         for (char c : path.toCharArray()) {
@@ -122,6 +134,7 @@ public class HomeController {
         return new int[]{x, y};
     }
 
+    // Helper untuk perbedaanL
     private String reversePath(String path) {
         StringBuilder sb = new StringBuilder();
         for (char c : path.toCharArray()) {
@@ -135,7 +148,9 @@ public class HomeController {
         return sb.toString();
     }
 
-    // 4. Paling Ter
+    /**
+     * 4. Paling Ter
+     */
     @GetMapping("/paling-ter")
     public String palingTer(@RequestParam String strBase64) {
         String text = decodeBase64(strBase64);
@@ -162,15 +177,5 @@ public class HomeController {
         }
 
         return String.format("Kata 'ter' yang paling sering muncul adalah '%s' (muncul %d kali).", topWord, maxCount);
-    }
-
-    // Helper: decode Base64
-    private String decodeBase64(String strBase64) {
-        try {
-            byte[] bytes = Base64.getDecoder().decode(strBase64);
-            return new String(bytes);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Input Base64 tidak valid.");
-        }
     }
 }
